@@ -13,9 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('books', function (Blueprint $table) {
-            $table->bigInteger('user_id', 0, 1)->nullable();
-            $table->foreign('user_id')->references('id')->on('users')->restrictOnDelete();
+        Schema::create('deliveries', function (Blueprint $table) {
+            $table->id();
+            $table->bigInteger('user_id', 0, 1);
+            $table->date('date');
+            $table->timestamps();
         });
     }
 
@@ -26,9 +28,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('books', function (Blueprint $table) {
-            $table->dropForeign(['user_id']);
-            $table->dropColumn('user_id');
-        });
+        Schema::dropIfExists('deliveries');
     }
 };
