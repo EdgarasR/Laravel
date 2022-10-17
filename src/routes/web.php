@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +14,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+Route::get('/', [Controllers\Products\ProductController::class, 'index']);
+
+Route::prefix('/products')->name('products.')->group(function () {
+    Route::get('/orders', [Controllers\Products\ProductController::class, 'orders'])->name('orders');
+    Route::get('/contact', [Controllers\Products\ProductController::class, 'contact'])->name('contact');
 });
