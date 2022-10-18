@@ -14,9 +14,10 @@ use App\Http\Controllers;
 |
 */
 
-Route::get('/', [Controllers\Products\ProductController::class, 'index']);
+Route::get('/count', [Controllers\Products\ProductController::class, 'count']);
 
-Route::prefix('/products')->name('products.')->group(function () {
-    Route::get('/orders', [Controllers\Products\ProductController::class, 'orders'])->name('orders');
-    Route::get('/contact', [Controllers\Products\ProductController::class, 'contact'])->name('contact');
-});
+Route::get('/categories', [Controllers\Products\ProductController::class, 'categories']);
+
+Route::get('/byname', [Controllers\Products\ProductController::class, 'byName']);
+
+Route::get('/transactions', [Controllers\Products\ProductController::class, 'transactions']);
