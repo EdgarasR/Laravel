@@ -22,7 +22,7 @@ class ProductController extends Controller
     {
         $productsQuery = DB::table('products');
 
-        $productsQuery->where('category_id', '<', '13');
+        $productsQuery->take(2);
 
         $products = $productsQuery->get('count');
 
