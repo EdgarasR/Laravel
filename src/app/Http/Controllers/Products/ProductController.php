@@ -13,7 +13,7 @@ class ProductController extends Controller
     {
         $productsQuery = DB::table('products');
 
-        $products = $productsQuery->get('count');
+        $products = $productsQuery->count();
 
         dd($products);
     }
