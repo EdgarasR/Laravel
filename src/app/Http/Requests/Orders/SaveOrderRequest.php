@@ -3,19 +3,11 @@
 namespace App\Http\Requests\Orders;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Product;
+use App\Models\User;
 
 class SaveOrderRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
-    public function authorize()
-    {
-        return false;
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -24,7 +16,10 @@ class SaveOrderRequest extends FormRequest
     public function rules()
     {
         return [
-            //
+            'user_id' => ['required', sprintf('exists:%s,id', User::class)],
+            'products' => ['required', 'array', 'min:1'],
+            'products.*.id' => ['required', sprintf('exists:%s,id', Product::class)],
+            'products.*.count' => ['required', 'integer', 'min:1'],
         ];
     }
 }
