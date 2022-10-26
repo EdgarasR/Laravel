@@ -2,9 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\Products;
-use App\Models\UserAccounts;
 use Illuminate\Database\Eloquent\Factories\Factory;
+
+use App\Models\User;
+use App\Models\Product;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Cart>
@@ -19,9 +20,8 @@ class CartFactory extends Factory
     public function definition()
     {
         return [
-            'product_id' => Products::factory(),
-            'user_id' => UserAccounts::factory(),
-            'count' => fake()->randomDigit()
+            'user_id' => User::factory(),
+            'product_id' => Product::factory(),
         ];
     }
 }

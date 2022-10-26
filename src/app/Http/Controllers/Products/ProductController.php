@@ -4,56 +4,160 @@ namespace App\Http\Controllers\Products;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Products;
+use App\Models\Product;
+use App\Models\ProductCategory;
 use Illuminate\Support\Facades\DB;
+use App\Http\Requests\Products\StoreProductRequest;
+use App\Http\Requests\Products\UpdateProductRequest;
 
 class ProductController extends Controller
 {
-    public function count()
+    const ORDERING_VALUES = [
+        'created_at' => 'Newest first',
+        'name:asc'   => 'Name Accessing',
+        'name:desc'  => 'Name Descending',
+        'price:asc'  => 'Price Accessing',
+        'price:desc' => 'Price Descending',
+        'identifier:asc' => 'Identifier Accessing',
+        'identifier:desc' => 'Identifier Descending',
+    ];
+
+    const ORDERING_DEFAULT_VALUE = 'created_at';
+
+    public function index(Request $request)
     {
-        $productsQuery = DB::table('products');
+        $productQuery = Product::query()->where('is_active', true);
 
-        $products = $productsQuery->count();
+        $categoryId = $request->get('category_id');
 
-        dd($products);
+        if ($categoryId && is_numeric($categoryId)) {
+            $productQuery->where('category_id', $categoryId);
+        }
+
+        if ($request->has('search')) {
+            $likeValue = '%' . $request->get('search') . '%';
+
+            $productQuery->where(function($query) use($likeValue) {
+                $query->where('name', 'LIKE', $likeValue);
+                $query->orWhere('description', 'LIKE', $likeValue);
+            });
+        }
+
+        $orderBy = $request->get('order_by');
+        $orderBy = array_key_exists($orderBy, self::ORDERING_VALUES) ? $orderBy : self::ORDERING_DEFAULT_VALUE;
+        $orderBy = explode(':', $orderBy);
+
+        $orderByColumn = $orderBy[0];
+        $orderByDirection = $orderBy[1] ?? 'desc';
+
+        $productQuery->orderBy($orderByColumn, $orderByDirection);
+
+        $products = $productQuery->get();
+
+        // Categories moved to view composer
+        // $categories = ProductCategory::get();
+        // $view = view('products.index', compact('products', 'categories'));
+
+        $view = view('products.index', compact('products'));
+
+        $view->with('categoryId', $request->get('category_id'));
+        $view->with('ordering', self::ORDERING_VALUES);
+
+        return $view;
+    }
+    
+    public function create()
+    {   
+        // Categories moved to view composer
+        // $categories = ProductCategory::get();
+        // return view('products.create', compact('categories'));
+
+        return view('products.create');
     }
 
-    public function categories()
+    public function storeV1(Request $request)
     {
-        $productsQuery = DB::table('products');
-
-        $productsQuery->take(2);
-
-        $products = $productsQuery->get('count');
-
-        dd($products);
+        // https://laravel.com/docs/9.x/eloquent#mass-assignment
+        $product = Product::create($request->all());
+        // $product = Product::create($request->only('name', 'description', 'category_id', 'identifier'));
+        
+        return redirect()->route('products.show', $product->id);
     }
 
-    public function byName()
+    public function storeV2(Request $request)
     {
-        $productsQuery = DB::table('products');
+        $product = new Product();
 
-        $productsQuery->orderBy('name');
+        $product->name        = $request->get('name');
+        $product->description = $request->get('description');
+        $product->category_id = $request->get('category_id');
+        $product->identifier  = $request->get('identifier');
 
-        $products = $productsQuery->get();
+        $product->is_active = true;
 
-        dd($products);
+        $product->save();
+        
+        return redirect()->route('products.show', $product->id);
     }
 
-    // PAS MANE NĖRA is_active, TODĖL PADARIAU SU PANAŠIA SKILTIMI KITOJE LENTELĖJE
-
-    public function transactions()
+    public function storeV3(Request $request)
     {
-        $transactionQuery = DB::table('transaction');
+        // $product = new Product($request->all());
+        $product = new Product($request->only('name', 'description', 'category_id', 'identifier'));
 
-        $transactionQuery->where('trans_type', '=', 'cash');
+        $product->is_active = true;
 
-        $transactionQuery->orderBy('id', 'desc');
+        $product->save();
 
-        $transactionQuery->limit(3);
+        return redirect()->route('products.show', $product->id);
+    }
 
-        $transactions = $transactionQuery->get();
+    // https://laravel.com/docs/9.x/validation#quick-writing-the-validation-logic
+    public function storeV4(Request $request)
+    {
+        // https://laravel.com/docs/9.x/validation#validating-arrays
+        $rules = [
+            'name' => 'required|min:5|max:255|string',
+            'description' => ['required', 'min:5', 'max:1000', 'string'],
+            'category_id' => ['required', sprintf('exists:%s,id', ProductCategory::class)],
 
-        dd($transactions);
+            // 'identifier' => ['required', 'unique:products,identifier'],
+            // 'identifier' => ['required', 'unique:App\Models\Product,identifier'],
+            'identifier' => ['required', sprintf('unique:%s,identifier', Product::class)]
+        ];
+
+        $validated = $request->validate($rules);
+
+        // // https://en.wikipedia.org/wiki/Don%27t_repeat_yourself
+        // $product = new Product($validated);
+        // $product->is_active = true;
+        // $product->save();
+
+        return $this->storeV3($request);
+    }
+
+    public function storeV5(StoreProductRequest $request)
+    {
+        return $this->storeV3($request);
+    }
+
+    public function edit(Product $product)
+    {    
+        return view('products.edit', compact('product'));
+    }
+
+    public function update(UpdateProductRequest $request, Product $product)
+    {    
+        $product->fill($request->validated());
+
+        $product->save();
+
+        return redirect()->route('products.show', $product->id);
+    }
+
+    public function show(Product $product)
+    {   
+        return view('products.show', compact('product'));
     }
 }
+
