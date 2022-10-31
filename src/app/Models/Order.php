@@ -20,6 +20,6 @@ class Order extends Model
 
     public function products()
     {
-        return [1,2,3];
+        return $this->belongsToMany(Product::class, 'orders_products')->withPivot('count');
     }
 }
