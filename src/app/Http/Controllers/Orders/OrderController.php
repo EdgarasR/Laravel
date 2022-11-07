@@ -8,16 +8,16 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Http\Requests\Orders\SaveOrderRequest;
-use App\Http\Resources\Orders\OrderResource;
 use Illuminate\Support\Facades\DB;
+use App\Http\Resources\Orders\OrderResource;
+use App\Http\Resources\Products\ProductResource;
 
 class OrderController extends Controller
 {
     public function index()
     {
-
         // https://laravel.com/docs/9.x/eloquent-relationships#eager-loading
-        $orders = Order::with('user')->latest()->get();
+        $orders = Order::with('user', 'products')->latest()->get();
 
         // Todo: refactor //
         $products = Product::get();
@@ -45,12 +45,16 @@ class OrderController extends Controller
 
         return response()->json();
     }
-    public function saveV2(SaveOrderRequest $request)
+
+    public function saveV2(SaveOrderRequest $request, Order $order = null)
     {
         $user = User::find($request->get('user_id'));
 
-        $order = new Order();
+        if ($order == null) {
+            $order = new Order();
+        }
 
+        // https://laravel.com/docs/9.x/eloquent-relationships#updating-belongs-to-relationships
         $order->user()->associate($user);
 
         $order->save();
@@ -59,10 +63,13 @@ class OrderController extends Controller
 
         foreach ($request->get('products') as $productData) {
             $products[$productData['id']] = [
-                'count' => $productData['count']
+                'count' => $productData['count'],
+                // 'data'  => new ProductResource(Product::find($productData['id']))
+                'data'  => Product::with('category')->find($productData['id'])->toJson()
             ];
         }
 
+        // https://laravel.com/docs/9.x/eloquent-relationships#syncing-associations
         $order->products()->sync($products);
 
         return response()->json();
