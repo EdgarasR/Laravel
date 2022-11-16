@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
 
             $table->boolean('is_active')->default(FALSE);
-            
+
             $table->foreignId('category_id')->constrained('product_categories');
 
             $table->unsignedTinyInteger('stock')->default(0);
